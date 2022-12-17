@@ -28,7 +28,6 @@ class Invite(commands.Cog):
             description=f"Waiting for {user.mention} to respond",
             color=discord.Color.blue()
         )
-
         accept_button = create_accept_button(user)
         reject_button = create_reject_button(user)
         view = View()
@@ -39,8 +38,6 @@ class Invite(commands.Cog):
 
 
 def create_accept_button(user):
-    button = Button(label="Accept", style=discord.ButtonStyle.green)
-
     async def callback(interaction):
         if interaction.user == user:
             embed = create_embed(
@@ -49,14 +46,12 @@ def create_accept_button(user):
             )
             await interaction.response.edit_message(embed=embed, view=None)
 
+    button = Button(label="Accept", style=discord.ButtonStyle.green)
     button.callback = callback
-
     return button
 
 
 def create_reject_button(user):
-    button = Button(label="Reject", style=discord.ButtonStyle.red)
-
     async def callback(interaction):
         if interaction.user == user:
             embed = create_embed(
@@ -65,8 +60,8 @@ def create_reject_button(user):
             )
             await interaction.response.edit_message(embed=embed, view=None)
 
+    button = Button(label="Reject", style=discord.ButtonStyle.red)
     button.callback = callback
-
     return button
 
 
