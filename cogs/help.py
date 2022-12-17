@@ -10,7 +10,7 @@ class Help(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"[LOAD] 'Help' command is loaded")
+        print(f"[LOAD] 'help' command is loaded")
 
     @commands.group(invoke_without_command=True)
     async def help(self, context):

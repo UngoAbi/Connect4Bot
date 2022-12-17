@@ -4,13 +4,14 @@ from discord.ui import Button, View
 from Connect4Bot.utils import create_embed
 
 
+
 class Invite(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"[LOAD] 'Invite' command is loaded")
+        print(f"[LOAD] 'invite' command is loaded")
 
     @commands.command()
     async def invite(self, context, user: discord.Member):
@@ -45,6 +46,7 @@ def create_accept_button(user):
                 color=discord.Color.green()
             )
             await interaction.response.edit_message(embed=embed, view=None)
+            await Game.game(generate_game_id())
 
     button = Button(label="Accept", style=discord.ButtonStyle.green)
     button.callback = callback
