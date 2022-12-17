@@ -4,6 +4,6 @@ import json
 with open("consts.json") as f:
     json_file = json.load(f)
 
-    TOKEN = json_file["TOKEN"]
-    OWNER_ID = json_file["OWNER_ID"]
-    FOOTER = json_file["FOOTER"]
+    token = json_file["TOKEN"]
+    owner_id = json_file["OWNER_ID"]
+    footer = json_file["FOOTER"]

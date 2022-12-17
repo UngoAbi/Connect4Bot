@@ -1,6 +1,7 @@
+import os
 import discord
 from discord.ext import commands
-from Connect4Bot.consts import FOOTER
+from Connect4Bot.utils import create_embed
 
 
 class Help(commands.Cog):
@@ -9,16 +10,16 @@ class Help(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"[LOAD] 'help' command is loaded")
+        print(f"[LOAD] 'Help' command is loaded")
 
     @commands.group(invoke_without_command=True)
     async def help(self, context):
-        embed = discord.Embed(
-            title="help",
-            description="shows a list of all commands",
+        description = [f"`{filename[:-3]}`" for filename in os.listdir("./cogs") if filename.endswith(".py")]
+        embed = create_embed(
+            title="Commands",
+            description=" ".join(description),
             color=discord.Color.blue()
         )
-        embed.set_footer(text=FOOTER)
         await context.send(embed=embed)
 
 

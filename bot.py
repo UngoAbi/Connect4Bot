@@ -11,7 +11,7 @@ intents.message_content = True
 bot = commands.Bot(
     command_prefix="$",
     intents=intents,
-    owner_id=OWNER_ID,
+    owner_id=owner_id,
     help_command=None
 )
 
@@ -31,7 +31,7 @@ async def load():
 
 async def main():
     await load()
-    await bot.start(TOKEN)
+    await bot.start(token)
 
 
 asyncio.run(main())
