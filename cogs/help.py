@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from Connect4Bot.consts import FOOTER
 
 
 class Help(commands.Cog):
@@ -8,11 +9,17 @@ class Help(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print("help command is loaded")
+        print(f"[LOAD] 'help' command is loaded")
 
-    @commands.command()
+    @commands.group(invoke_without_command=True)
     async def help(self, context):
-        await context.send("insert text")
+        embed = discord.Embed(
+            title="help",
+            description="shows a list of all commands",
+            color=discord.Color.blue()
+        )
+        embed.set_footer(text=FOOTER)
+        await context.send(embed=embed)
 
 
 async def setup(bot):

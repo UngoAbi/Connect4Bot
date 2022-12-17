@@ -1,4 +1,6 @@
-constants.json
+# custom files
+consts.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
