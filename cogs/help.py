@@ -22,6 +22,16 @@ class Help(commands.Cog):
         )
         await context.send(embed=embed)
 
+    @help.command()
+    async def invite(self, context):
+        embed = create_embed(
+            title="Invite",
+            description="invites a user to a game",
+            color=discord.Color.blue()
+        )
+        embed.add_field(name="Syntax:", value=f"**{self.bot.command_prefix}invite <user>**")
+        await context.send(embed=embed)
+
 
 async def setup(bot):
     await bot.add_cog(Help(bot))

@@ -4,20 +4,20 @@ from discord.ui import Button, View
 from Connect4Bot.utils import create_embed
 
 
-class Play(commands.Cog):
+class Invite(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"[LOAD] 'Play' command is loaded")
+        print(f"[LOAD] 'Invite' command is loaded")
 
     @commands.command()
-    async def play(self, context, user: discord.Member):
+    async def invite(self, context, user: discord.Member):
         if user == context.message.author or user == self.bot.user:
             embed = create_embed(
                 title="Error",
-                description="You cannot play with this user",
+                description="You cannot invite with this user",
                 color=discord.Color.red()
             )
             await context.send(embed=embed)
@@ -71,4 +71,4 @@ def create_reject_button(user):
 
 
 async def setup(bot):
-    await bot.add_cog(Play(bot))
+    await bot.add_cog(Invite(bot))
