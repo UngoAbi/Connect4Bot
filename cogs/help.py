@@ -14,7 +14,7 @@ class Help(commands.Cog):
 
     @commands.group(invoke_without_command=True)
     async def help(self, context):
-        description = [f"`{filename[:-3]}`" for filename in os.listdir("./cogs") if filename.endswith(".py")]
+        description = [f"`{filename[:-3]}`" for filename in os.listdir("./cogs") if (filename.endswith(".py"))]
         embed = create_embed(
             title="Commands",
             description=" ".join(description),

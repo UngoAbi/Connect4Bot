@@ -8,7 +8,6 @@ from Connect4Bot.cogs.game import generate_game_id
 class Invite(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.game_command = self.bot.get_command("game")
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -30,7 +29,7 @@ class Invite(commands.Cog):
             description=f"Waiting for {user.mention} to respond",
             color=discord.Color.blue()
         )
-        accept_button = create_accept_button(context, user, self.game_command)
+        accept_button = create_accept_button(context, user, self.bot.get_command("game"))
         reject_button = create_reject_button(user)
         view = View()
         view.add_item(accept_button)

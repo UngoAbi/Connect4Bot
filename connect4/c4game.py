@@ -1,6 +1,3 @@
-import json
-
-
 def insert_chip(data, column):
     state = data.get("state")
     moves = data.get("moves")
