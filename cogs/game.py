@@ -3,6 +3,7 @@ import random
 import discord
 from discord.ext import commands
 from Connect4Bot.utils import create_embed
+from Connect4Bot.connect4 import c4game
 
 
 class Game(commands.Cog):
@@ -36,30 +37,31 @@ class Game(commands.Cog):
     async def watch(self, context, game_id):
         pass
 
-    async def play(self, context, game_id):
-        pass
+    @staticmethod
+    async def play(context, game_id):
+        with open("connect4/games.json") as file:
+            json_file = json.load(file)
+        data = json_file.get(game_id)
 
 
 def generate_game_id(players):
     with open("connect4/games.json") as file:
         json_file = json.load(file)
 
+    players = [player.id for player in random.sample(players, k=2)]
     game_id = str(random.random())[-4:]
     while game_id in json_file:
         game_id = random.random()[-4:]
-    players = random.sample(players, k=2)
+
     json_file[game_id] = {
         "state": [["0" for _ in range(7)] for _ in range(6)],
-        "player1": players[0],
-        "player2": players[1],
-        "turn": 1,
-        "on_going": True,
-        "moves": []
+        "players": players,
+        "moves": [],
+        "on_going": True
     }
 
     with open("connect4/games.json", "w") as file:
         json.dump(json_file, file, indent=2)
-
     return game_id
 
 

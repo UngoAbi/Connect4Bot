@@ -2,12 +2,13 @@ import discord
 from discord.ext import commands
 from discord.ui import Button, View
 from Connect4Bot.utils import create_embed
-from Connect4Bot.cogs.game import Game, generate_game_id
+from Connect4Bot.cogs.game import generate_game_id
 
 
 class Invite(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.game_command = self.bot.get_command("game")
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -29,7 +30,7 @@ class Invite(commands.Cog):
             description=f"Waiting for {user.mention} to respond",
             color=discord.Color.blue()
         )
-        accept_button = create_accept_button(context.author, user)
+        accept_button = create_accept_button(context, user, self.game_command)
         reject_button = create_reject_button(user)
         view = View()
         view.add_item(accept_button)
@@ -38,7 +39,7 @@ class Invite(commands.Cog):
         await context.send(embed=embed, view=view)
 
 
-def create_accept_button(author, user):
+def create_accept_button(context, user, game_command):
     async def callback(interaction):
         if interaction.user == user:
             embed = create_embed(
@@ -46,8 +47,9 @@ def create_accept_button(author, user):
                 color=discord.Color.green()
             )
             await interaction.response.edit_message(embed=embed, view=None)
-            await Game.game(generate_game_id(author, user))
+            await context.invoke(await game_command(context, generate_game_id([author, user])))
 
+    author = context.author
     button = Button(label="Accept", style=discord.ButtonStyle.green)
     button.callback = callback
     return button
