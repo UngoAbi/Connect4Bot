@@ -1,6 +1,6 @@
 # custom files
 consts.json
-connect4/games.json
+games.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
