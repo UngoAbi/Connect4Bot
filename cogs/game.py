@@ -19,17 +19,22 @@ class Game(commands.Cog):
 
 
 def generate_game_id():
-    with open("connect4/games.json", "w") as file:
+    with open("connect4/games.json") as file:
         json_file = json.load(file)
-        game_id = random.random()[-4:]
-        while id in json_file:
-            game_id = random.random()[-4:]
 
-        json_file[game_id] = {
-            "state": [["0" for _ in range(7)] for _ in range(6)],
-            "turn": "1"
-        }
-        file.write(json_file)
+    game_id = str(random.random())[-4:]
+    while game_id in json_file:
+        game_id = random.random()[-4:]
+
+    json_file[game_id] = {
+        "state": [["0" for _ in range(7)] for _ in range(6)],
+        "turn": "1",
+        "on_going": "1"
+    }
+
+    with open("connect4/games.json", "w") as file:
+        json.dump(json_file, file, indent=2)
+
     return game_id
 
 

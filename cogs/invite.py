@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from discord.ui import Button, View
 from Connect4Bot.utils import create_embed
-
+from Connect4Bot.cogs.game import Game, generate_game_id
 
 
 class Invite(commands.Cog):
