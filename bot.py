@@ -2,7 +2,7 @@ import os
 import asyncio
 import discord
 from discord.ext import commands
-from consts import *
+from utils import token, owner_id
 
 
 intents = discord.Intents.default()
