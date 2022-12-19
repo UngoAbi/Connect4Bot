@@ -29,44 +29,41 @@ class Invite(commands.Cog):
             description=f"Waiting for {user.mention} to respond",
             color=discord.Color.blue()
         )
-        accept_button = create_accept_button(context, user, self.bot.get_command("game"))
-        reject_button = create_reject_button(user)
+        accept_button = self.get_accept_button(context, user)
+        reject_button = self.get_reject_button(user)
         view = View()
         view.add_item(accept_button)
         view.add_item(reject_button)
 
         await context.send(embed=embed, view=view)
 
+    def get_accept_button(self, context, user):
+        async def callback(interaction):
+            if interaction.user == user:
+                embed = create_embed(
+                    title="Invite has been accepted",
+                    color=discord.Color.green()
+                )
+                await interaction.response.edit_message(embed=embed, view=None)
+                await context.invoke(await self.bot.get_command("game")(context, generate_game_id([context.author, user])))
 
-def create_accept_button(context, user, game_command):
-    async def callback(interaction):
-        if interaction.user == user:
-            embed = create_embed(
-                title="Invite has been accepted",
-                color=discord.Color.green()
-            )
-            await interaction.response.edit_message(embed=embed, view=None)
-            await context.invoke(await game_command(context, generate_game_id([author, user])))
+        button = Button(label="Accept", style=discord.ButtonStyle.green)
+        button.callback = callback
+        return button
 
-    author = context.author
-    button = Button(label="Accept", style=discord.ButtonStyle.green)
-    button.callback = callback
-    return button
+    @staticmethod
+    def get_reject_button(user):
+        async def callback(interaction):
+            if interaction.user == user:
+                embed = create_embed(
+                    title="Invite has been rejected",
+                    color=discord.Color.red()
+                )
+                await interaction.response.edit_message(embed=embed, view=None)
 
-
-def create_reject_button(user):
-    async def callback(interaction):
-        if interaction.user == user:
-            embed = create_embed(
-                title="Invite has been rejected",
-                color=discord.Color.red()
-            )
-            await interaction.response.edit_message(embed=embed, view=None)
-
-    button = Button(label="Reject", style=discord.ButtonStyle.red)
-    button.callback = callback
-    return button
-
+        button = Button(label="Reject", style=discord.ButtonStyle.red)
+        button.callback = callback
+        return button
 
 async def setup(bot):
     await bot.add_cog(Invite(bot))

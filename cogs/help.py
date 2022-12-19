@@ -32,6 +32,16 @@ class Help(commands.Cog):
         embed.add_field(name="Syntax:", value=f"**{self.bot.command_prefix}invite <user>**")
         await context.send(embed=embed)
 
+    @help.command()
+    async def game(self, context):
+        embed = create_embed(
+            title="Game",
+            description="display an on going game or watch a replay",
+            color=discord.Color.blue()
+        )
+        embed.add_field(name="Syntax:", value=f"**{self.bot.command_prefix}game <game_id>**")
+        await context.send(embed=embed)
+
 
 async def setup(bot):
     await bot.add_cog(Help(bot))

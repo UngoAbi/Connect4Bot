@@ -8,7 +8,6 @@ def insert_chip(data, column):
             row[column] = chip
             moves.append(column)
             return data
-
     else:
         return False
 

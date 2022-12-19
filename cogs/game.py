@@ -3,7 +3,6 @@ import random
 import discord
 from discord.ext import commands
 from Connect4Bot.utils import create_embed
-from Connect4Bot.connect4 import c4game
 
 
 class Game(commands.Cog):
@@ -18,7 +17,6 @@ class Game(commands.Cog):
     async def game(self, context, game_id):
         with open("connect4/games.json") as file:
             json_file = json.load(file)
-        game_is_on_going = json_file.get(game_id).get("on_going")
 
         if game_id not in json_file:
             embed = create_embed(
@@ -28,20 +26,19 @@ class Game(commands.Cog):
             )
             context.send(embed=embed)
 
-        elif not game_is_on_going:
-            await self.watch(context, game_id)
+        elif json_file.get(game_id).get("on_going"):
+            await self.play(context, game_id)
 
         else:
-            await self.play(context, game_id)
+            await self.watch(context, game_id)
+
+    async def play(self, context, game_id):
+        with open("connect4/games.json") as file:
+            json_file = json.load(file)
+        data = json_file.get(game_id).values()
 
     async def watch(self, context, game_id):
         pass
-
-    @staticmethod
-    async def play(context, game_id):
-        with open("connect4/games.json") as file:
-            json_file = json.load(file)
-        data = json_file.get(game_id)
 
 
 def generate_game_id(players):
