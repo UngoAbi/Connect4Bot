@@ -29,7 +29,7 @@ class Game(commands.Cog):
     async def play(self, context, game_id):
         embed = discord.Embed(
             title=self.get_title(game_id),
-            description=self.get_game_state(game_id),
+            description=self.get_matrix(game_id),
             color=self.get_color(game_id)
         )
         embed.set_footer(text=utils.footer)
@@ -55,6 +55,7 @@ class Game(commands.Cog):
             result = self.insert_chip(game_id, number)
             if result is not False:
                 self.update_game_data(game_id, result)
+                self.get_status(game_id)
                 await self.game(interaction, game_id)
 
         button = Button(emoji=utils.numbers[number])
@@ -77,10 +78,10 @@ class Game(commands.Cog):
         turn_player = players[len(game_data.get("moves")) % 2]
         return f"Game: {game_id}; {' vs '.join(players)}\nIt's {turn_player}'s turn"
 
-    def get_game_state(self, game_id):
+    def get_matrix(self, game_id):
         game_data = self.get_game_data(game_id)
-        state = game_data.get("state")
-        return "\n".join(["".join([utils.colors.get(cell_color) for cell_color in row]) for row in state])
+        matrix = game_data.get("matrix")
+        return "\n".join(["".join([utils.colors.get(cell_color) for cell_color in row]) for row in matrix])
 
     def get_color(self, game_id):
         game_data = self.get_game_data(game_id)
@@ -88,11 +89,11 @@ class Game(commands.Cog):
 
     def insert_chip(self, game_id, column):
         game_data = self.get_game_data(game_id)
-        state = game_data.get("state")
+        matrix = game_data.get("matrix")
         moves = game_data.get("moves")
         chip = "red" if len(moves) % 2 == 0 else "yellow"
 
-        for row in reversed(state):
+        for row in reversed(matrix):
             if row[column] == "blue":
                 row[column] = chip
                 moves.append(column)
@@ -100,8 +101,19 @@ class Game(commands.Cog):
         else:
             return False
 
-    def get_game_status(self):
-        pass
+    def get_status(self, game_id):
+        self.check_for_win(game_id)
+
+    def check_for_win(self, game_id):
+        game_data = self.get_game_data(game_id)
+        matrix = game_data.get("matrix")
+        last_move = game_data.get("moves")[-1]
+        root_x, root_y = last_move, game_data.get("moves").count(last_move) - 1
+        print(root_x, root_y)
+
+    @staticmethod
+    def is_in_bounds(x, y):
+        return 0 <= x <= 6 and 0 <= y <= 5
 
     @staticmethod
     def get_game_data(game_id):
@@ -129,7 +141,7 @@ async def generate_game_id(players):
         game_id = random.random()[-4:]
 
     json_file[game_id] = {
-        "state": [["blue" for _ in range(7)] for _ in range(6)],
+        "matrix": [["blue" for _ in range(7)] for _ in range(6)],
         "player_ids": player_ids,
         "moves": [],
         "on_going": True
@@ -229,7 +241,7 @@ def generate_game_id(players):
         game_id = random.random()[-4:]
 
     json_file[game_id] = {
-        "state": [["0" for _ in range(7)] for _ in range(6)],
+        "matrix": [["0" for _ in range(7)] for _ in range(6)],
         "players": players,
         "moves": [],
         "on_going": True
