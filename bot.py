@@ -5,7 +5,7 @@ from discord.ext import commands
 from utils import token, owner_id
 
 
-intents = discord.Intents.default()
+intents = discord.Intents.all()
 intents.message_content = True
 
 bot = commands.Bot(

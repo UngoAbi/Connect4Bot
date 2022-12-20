@@ -16,11 +16,11 @@ class Invite(commands.Cog):
     @commands.command()
     async def invite(self, context, user:discord.Member):
         if not isinstance(user, discord.Member):
-            self.error_user_not_found(context)
+            await self.error_user_not_found(context)
             return
 
         if user == context.message.author or user == self.bot.user:
-            self.error_invalid_user(context)
+            await self.error_invalid_user(context)
             return
 
         embed = discord.Embed(

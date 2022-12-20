@@ -20,7 +20,7 @@ class Game(commands.Cog):
             json_file = json.load(outfile)
 
         if game_id not in json_file:
-           await self.error_game_not_found(context)
+            await self.error_game_not_found(context)
         elif json_file.get(game_id).get("on_going"):
             await self.play(context, game_id)
         else:
@@ -33,11 +33,33 @@ class Game(commands.Cog):
             color=self.get_color(game_id)
         )
         embed.set_footer(text=utils.footer)
+        view = View()
+        for number in range(7):
+            view.add_item(await self.make_button_number(game_id, number))
 
-        await context.send(embed=embed)
+        if isinstance(context, commands.Context):
+            await context.send(embed=embed, view=view)
+        else:
+            await context.response.edit_message(embed=embed, view=view)
 
     async def replay(self, context, game_id):
         pass
+
+    async def make_button_number(self, game_id, number):
+        async def callback(interaction):
+            game_data = self.get_game_data(game_id)
+            turn_player = self.bot.get_user(game_data.get("player_ids")[len(game_data.get("moves")) % 2])
+            if interaction.user != turn_player:
+                return
+
+            result = self.insert_chip(game_id, number)
+            if result is not False:
+                self.update_game_data(game_id, result)
+                await self.game(interaction, game_id)
+
+        button = Button(emoji=utils.numbers[number])
+        button.callback = callback
+        return button
 
     @staticmethod
     async def error_game_not_found(context):
@@ -50,28 +72,48 @@ class Game(commands.Cog):
         await context.send(embed=embed)
 
     def get_title(self, game_id):
-        with open("games.json") as outfile:
-            json_file = json.load(outfile)
-        players = [self.bot.get_user(player_id).name for player_id in json_file.get(game_id).get("player_ids")]
-        turn_player = players[len(json_file.get(game_id).get("moves")) % 2]
-        return f"Game: {game_id} {' vs '.join(players)}\nIt's {turn_player}'s turn"
+        game_data = self.get_game_data(game_id)
+        players = [self.bot.get_user(player_id).name for player_id in game_data.get("player_ids")]
+        turn_player = players[len(game_data.get("moves")) % 2]
+        return f"Game: {game_id}; {' vs '.join(players)}\nIt's {turn_player}'s turn"
+
+    def get_game_state(self, game_id):
+        game_data = self.get_game_data(game_id)
+        state = game_data.get("state")
+        return "\n".join(["".join([utils.colors.get(cell_color) for cell_color in row]) for row in state])
+
+    def get_color(self, game_id):
+        game_data = self.get_game_data(game_id)
+        return discord.Color.red() if len(game_data.get("moves")) % 2 == 0 else discord.Color.yellow()
+
+    def insert_chip(self, game_id, column):
+        game_data = self.get_game_data(game_id)
+        state = game_data.get("state")
+        moves = game_data.get("moves")
+        chip = "red" if len(moves) % 2 == 0 else "yellow"
+
+        for row in reversed(state):
+            if row[column] == "blue":
+                row[column] = chip
+                moves.append(column)
+                return game_data
+        else:
+            return False
 
     @staticmethod
-    def get_game_state(game_id):
+    def get_game_data(game_id):
         with open("games.json") as outfile:
             json_file = json.load(outfile)
-        game_state = json_file.get(game_id).get("state")
-        return "\n".join(["".join([utils.colors.get(cell_color) for cell_color in row]) for row in game_state])
+        return json_file.get(game_id)
 
     @staticmethod
-    def get_color(game_id):
+    def update_game_data(game_id, game_data):
         with open("games.json") as outfile:
             json_file = json.load(outfile)
-        return discord.Color.red() if len(json_file.get(game_id).get("moves")) % 2 == 0 else discord.Color.yellow()
 
-        with open("games.json", "w") as file:
-            json.dump(json_file, file, indent=2)
-        return game_id
+        with open("games.json", "w") as outfile:
+            json_file[game_id] = game_data
+            json.dump(json_file, outfile, indent=2)
 
 
 async def generate_game_id(players):
