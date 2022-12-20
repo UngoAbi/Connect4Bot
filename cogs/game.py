@@ -74,11 +74,7 @@ class Game(commands.Cog):
         return game_id
 
 
-async def setup(bot):
-    await bot.add_cog(Game(bot))
-
-
-def generate_game_id(players):
+async def generate_game_id(players):
     with open("games.json") as outfile:
         json_file = json.load(outfile)
 
@@ -98,6 +94,11 @@ def generate_game_id(players):
         json.dump(json_file, file, indent=2)
 
     return game_id
+
+
+async def setup(bot):
+    await bot.add_cog(Game(bot))
+
 
 """
 import json
