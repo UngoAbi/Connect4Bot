@@ -100,6 +100,9 @@ class Game(commands.Cog):
         else:
             return False
 
+    def get_game_status(self):
+        pass
+
     @staticmethod
     def get_game_data(game_id):
         with open("games.json") as outfile:
