@@ -14,7 +14,7 @@ class Invite(commands.Cog):
         print(f"[LOAD] 'invite' command is loaded")
 
     @commands.command()
-    async def invite(self, context, user:discord.Member):
+    async def invite(self, context, user: discord.Member):
         if not isinstance(user, discord.Member):
             await self.error_user_not_found(context)
             return
@@ -46,7 +46,7 @@ class Invite(commands.Cog):
             )
             embed.set_footer(text=utils.footer)
             await interaction.response.edit_message(embed=embed, view=None)
-            game_id = await generate_game_id([context.author, user])
+            game_id = generate_game_id([context.author, user])
             await context.invoke(await self.bot.get_command("game")(context, game_id))
 
         button = Button(label="Accept", style=discord.ButtonStyle.green)
