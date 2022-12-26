@@ -22,7 +22,9 @@ class Game(commands.Cog):
             case True:
                 await self.play(context, game_id)
             case False:
-                await self.replay(context, game_id)
+                game_data = self.get_game_data(game_id)
+                game_data["current_move"] = len(game_data.get("moves"))
+                await self.replay(context, game_data)
             case None:
                 await self.error_game_not_found(context)
 
@@ -45,10 +47,6 @@ class Game(commands.Cog):
             await message.response.edit_message(embed=embed, view=view)
 
     async def replay(self, message, game_data):
-        if isinstance(game_data, str):
-            game_data = self.get_game_data(game_data)
-            game_data["currrent_move"] = len(game_data.get("moves"))
-
         embed = discord.Embed(
             title=self.get_title(game_data),
             description=self.draw_matrix(game_data.get("matrix")),
@@ -56,10 +54,16 @@ class Game(commands.Cog):
         )
         embed.set_footer(text=utils.footer)
 
+        view = View()
+
         if isinstance(message, commands.Context):
-            await message.send(embed=embed)
+            view.add_item(self.make_left_arrow_button(game_data, message.author))
+            view.add_item(self.make_right_arrow_button(game_data, message.author))
+            await message.send(embed=embed, view=view)
         else:
-            await message.response.edit_message(embed=embed)
+            view.add_item(self.make_left_arrow_button(game_data, message.user))
+            view.add_item(self.make_right_arrow_button(game_data, message.user))
+            await message.response.edit_message(embed=embed, view=view)
 
     def make_number_button(self, game_id, number):
         async def callback(interaction):
@@ -68,13 +72,16 @@ class Game(commands.Cog):
             if interaction.user != turn_player:
                 return
 
-            if self.insert_chip(game_data, number) is True:
+            if self.insert_chip(game_data, number) is not False:
+                game_data.get("moves").append(number)
                 status = self.get_status(game_data)
-                match status:
-                    case str():
-                        await self.send_winner_message(interaction.channel, status)
-                    case True:
-                        await self.send_draw_message(interaction.channel)
+                if status:
+                    game_data["on_going"] = False
+                    match status:
+                        case str():
+                            await self.send_winner_message(interaction.channel, status)
+                        case True:
+                            await self.send_draw_message(interaction.channel)
 
                 self.update_game_data(game_id, game_data)
                 await self.game(interaction, game_id)
@@ -83,17 +90,52 @@ class Game(commands.Cog):
         button.callback = callback
         return button
 
+    def make_left_arrow_button(self, game_data, author):
+        async def callback(interaction):
+            if interaction.user != author or game_data.get("current_move") == 1:
+                return
+
+            game_data["current_move"] -= 1
+            print(game_data.get("moves")[game_data.get("current_move")])
+            self.extract_chip(game_data, game_data.get("moves")[game_data.get("current_move")])
+            print(game_data)
+            await self.replay(interaction, game_data)
+
+        button = Button(emoji=utils.arrows[0])
+        button.callback = callback
+        return button
+
+    def make_right_arrow_button(self, game_data, author):
+        async def callback(interaction):
+            if interaction.user != author or game_data.get("current_move") == len(game_data.get("move")):
+                return
+
+            self.insert_chip(game_data, game_data.get("moves")[game_data.get("current_move")])
+            game_data["current_move"] += 1
+            await self.replay(interaction, game_data)
+
+        button = Button(emoji=utils.arrows[1])
+        button.callback = callback
+        return button
+
     @staticmethod
     def insert_chip(game_data, column):
+        print(column)
         matrix = game_data.get("matrix")
         moves = game_data.get("moves")
-        color = "red" if len(game_data.get("moves")) % 2 == 0 else "yellow"
+        row = 5 - moves.count(column)
+        if row == -1:
+            return False
+        color = "red" if len(moves) % 2 == 0 else "yellow"
+        matrix[row][column] = color
 
-        for row in reversed(matrix):
-            if row[column] == "blue":
-                row[column] = color
-                moves.append(column)
-                return True
+    @staticmethod
+    def extract_chip(game_data, column):
+        print(column)
+        matrix = game_data.get("matrix")
+        moves = game_data.get("moves")
+        row, column = 6 - moves.count(column), column
+        matrix[row][column] = "blue"
 
     def get_status(self, game_data):
         if self.game_is_won(game_data):
@@ -111,12 +153,11 @@ class Game(commands.Cog):
         for i in range(2):
             factor = 1 - 2*i
             for direction in directions:
-                offsets, count = direction
-                offset_x, offset_y = [offset * factor for offset in offsets]
+                offset_x, offset_y = [offset * factor for offset in direction[0]]
                 new_x, new_y = root_x + offset_x, root_y + offset_y
                 while self.is_in_bounds(new_x, new_y) and matrix[new_y][new_x] == color:
-                    count += 1
-                    if count == 4:
+                    direction[1] += 1
+                    if direction[1] == 4:
                         return True
                     new_x += offset_x
                     new_y += offset_y

@@ -13,7 +13,7 @@ class Help(commands.Cog):
         print(f"[LOAD] 'help' command is loaded")
 
     @commands.group(invoke_without_command=True)
-    async def help(self, context):
+    async def help(self, context):  # ToDo: make this look better
         description = [f"`{filename[:-3]}`" for filename in os.listdir("./cogs") if (filename.endswith(".py"))]
         embed = discord.Embed(
             title="Commands",
@@ -27,7 +27,7 @@ class Help(commands.Cog):
     async def invite(self, context):
         embed = discord.Embed(
             title="Invite",
-            description="invites a user to a game",
+            description="Invites a user to a game",
             color=discord.Color.blue()
         )
         embed.set_footer(text=utils.footer)
@@ -38,7 +38,7 @@ class Help(commands.Cog):
     async def game(self, context):
         embed = discord.Embed(
             title="Game",
-            description="display an on going game or watch a replay",
+            description="Display an on going game or watch a replay",
             color=discord.Color.blue()
         )
         embed.set_footer(text=utils.footer)

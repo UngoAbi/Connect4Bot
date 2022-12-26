@@ -6,7 +6,6 @@ from utils import token, owner_id
 
 
 intents = discord.Intents.all()
-intents.message_content = True
 
 bot = commands.Bot(
     command_prefix="$",

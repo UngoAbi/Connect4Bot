@@ -15,26 +15,21 @@ class Invite(commands.Cog):
 
     @commands.command()
     async def invite(self, context, user: discord.Member):
-        if not isinstance(user, discord.Member):
-            await self.error_user_not_found(context)
-            return
-
-        if user == context.message.author or user == self.bot.user:
-            await self.error_invalid_user(context)
-            return
+        if user in (context.message.author, self.bot.user):
+            self.send_error_invalid_user(context)
 
         embed = discord.Embed(
-            title="Invited sent",
-            description=f"waiting for {user.mention} to respond.",
+            title="Invite has been sent",
+            description=f"waiting for {user.mention} to respond",
             color=discord.Color.blue()
         )
         embed.set_footer(text=utils.footer)
         view = View()
-        view.add_item(await self.make_button_accept(context, user))
-        view.add_item(await self.make_button_reject(user))
+        view.add_item(self.make_accept_button(context, user))
+        view.add_item(self.make_reject_button(user))
         await context.send(embed=embed, view=view)
 
-    async def make_button_accept(self, context, user):
+    def make_accept_button(self, context, user):
         async def callback(interaction):
             if interaction.user != user:
                 return
@@ -46,6 +41,7 @@ class Invite(commands.Cog):
             )
             embed.set_footer(text=utils.footer)
             await interaction.response.edit_message(embed=embed, view=None)
+
             game_id = generate_game_id([context.author, user])
             await context.invoke(await self.bot.get_command("game")(context, game_id))
 
@@ -54,7 +50,7 @@ class Invite(commands.Cog):
         return button
 
     @staticmethod
-    async def make_button_reject(user):
+    def make_reject_button(user):
         async def callback(interaction):
             if interaction.user != user:
                 return
@@ -72,17 +68,7 @@ class Invite(commands.Cog):
         return button
 
     @staticmethod
-    async def error_user_not_found(context):
-        embed = discord.Embed(
-            title="Error: User not found",
-            description="The user you are looking for couldn't be found or does not exist.\nYou need to mention/ping the user, you want to play with.",
-            color=discord.Color.dark_red()
-        )
-        embed.set_footer(text=utils.footer)
-        await context.send(embed=embed)
-
-    @staticmethod
-    async def error_invalid_user(context):
+    async def send_error_invalid_user(context):
         embed = discord.Embed(
             title="Error: Invalid user",
             description="You can't play with this user.",
