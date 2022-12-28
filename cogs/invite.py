@@ -6,15 +6,15 @@ from Connect4Bot.connect4.c4game import start_new_game
 
 
 class Invite(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
     @commands.Cog.listener()
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         print(f"[LOAD] 'invite' command is loaded")
 
     @commands.command()
-    async def invite(self, context, user: discord.Member):
+    async def invite(self, context: commands.Context, user: discord.Member) -> None:
         if user in [context.author, self.bot.user]:
             await self.send_error_invalid_user(context)
             return
@@ -30,8 +30,8 @@ class Invite(commands.Cog):
         view.add_item(self.make_reject_button(user))
         await context.send(embed=embed, view=view)
 
-    def make_accept_button(self, context, user):
-        async def callback(interaction):
+    def make_accept_button(self, context: commands.Context, user: discord.User) -> Button:
+        async def callback(interaction: discord.Interaction) -> None:
             if interaction.user != user:
                 return
 
@@ -51,8 +51,8 @@ class Invite(commands.Cog):
         return button
 
     @staticmethod
-    def make_reject_button(user):
-        async def callback(interaction):
+    def make_reject_button(user: discord.User) -> Button:
+        async def callback(interaction: discord.Interaction) -> None:
             if interaction.user != user:
                 return
 
@@ -69,7 +69,7 @@ class Invite(commands.Cog):
         return button
 
     @staticmethod
-    async def send_error_invalid_user(context):
+    async def send_error_invalid_user(context: commands.Context) -> None:
         embed = discord.Embed(
             title="Error: Invalid user",
             description="You can't play with this user.",
@@ -79,5 +79,5 @@ class Invite(commands.Cog):
         await context.send(embed=embed)
 
 
-async def setup(bot):
+async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(Invite(bot))

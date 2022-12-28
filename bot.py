@@ -16,19 +16,19 @@ bot = commands.Bot(
 
 
 @bot.event
-async def on_ready():
+async def on_ready() -> None:
     print(f"[INIT] name: {bot.user.name}")
     print(f"[INIT] id: {bot.user.id}")
     print("[INIT] beep boop")
 
 
-async def load():
+async def load() -> None:
     for filename in os.listdir("./cogs"):
         if filename.endswith(".py"):
             await bot.load_extension(f"cogs.{filename[:-3]}")
 
 
-async def main():
+async def main() -> None:
     await load()
     await bot.start(token)
 
