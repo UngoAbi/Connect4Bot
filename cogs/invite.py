@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from discord.ui import Button, View
 from Connect4Bot import utils
-from Connect4Bot.cogs.game import generate_game_id
+from Connect4Bot.connect4.c4game import start_new_game
 
 
 class Invite(commands.Cog):
@@ -15,8 +15,9 @@ class Invite(commands.Cog):
 
     @commands.command()
     async def invite(self, context, user: discord.Member):
-        if user in (context.message.author, self.bot.user):
-            self.send_error_invalid_user(context)
+        if user in [context.author, self.bot.user]:
+            await self.send_error_invalid_user(context)
+            return
 
         embed = discord.Embed(
             title="Invite has been sent",
@@ -42,7 +43,7 @@ class Invite(commands.Cog):
             embed.set_footer(text=utils.footer)
             await interaction.response.edit_message(embed=embed, view=None)
 
-            game_id = generate_game_id([context.author, user])
+            game_id = start_new_game([context.author, user])
             await context.invoke(await self.bot.get_command("game")(context, game_id))
 
         button = Button(label="Accept", style=discord.ButtonStyle.green)

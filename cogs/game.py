@@ -1,20 +1,171 @@
-import json
-import random
 import discord
 from discord.ext import commands
 from discord.ui import Button, View
 from Connect4Bot import utils
+from Connect4Bot.connect4 import c4game
 
 
 class Game(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
     @commands.Cog.listener()
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         print(f"[LOAD] 'game' command is loaded")
 
     @commands.command()
+    async def game(self, context: commands.Context | discord.Interaction, game_id: str) -> None:
+        game_data = c4game.get_game_data(game_id)
+        if game_data is None:
+            return
+
+        match game_data.get("in_progress"):
+            case True:
+                await self.play(context, game_id)
+            case False:
+                await self.replay(context, game_data.copy())
+
+    async def play(self, message: commands.Context | discord.Interaction, game_id: str) -> None:
+        game_data = c4game.get_game_data(game_id)
+
+        embed = discord.Embed(
+            title=self.get_embed_title(game_data),
+            description=self.get_game_ui(game_data.get("matrix")),
+            color=c4game.get_turn_dccolor(game_data.get("current_turn"))
+        )
+        embed.set_footer(text=utils.footer)
+
+        view = View()
+        for number in range(7):
+            view.add_item(self.make_number_button(game_id, number))
+
+        if isinstance(message, commands.Context):
+            await message.send(embed=embed, view=view)
+        elif isinstance(message, discord.Interaction):
+            await message.response.edit_message(embed=embed, view=view)
+
+    async def replay(self, message: commands.Context | discord.Interaction, game_data: dict):
+        embed = discord.Embed(
+            title=self.get_embed_title(game_data),
+            description=self.get_game_ui(game_data.get("matrix")),
+            color=c4game.get_turn_dccolor(game_data.get("current_turn"))
+        )
+        embed.set_footer(text=utils.footer)
+
+        view = View()
+
+        if isinstance(message, commands.Context):
+            view.add_item(self.make_left_arrow_button(game_data, message.author))
+            view.add_item(self.make_right_arrow_button(game_data, message.author))
+            await message.send(embed=embed, view=view)
+        elif isinstance(message, discord.Interaction):
+            view.add_item(self.make_left_arrow_button(game_data, message.user))
+            view.add_item(self.make_right_arrow_button(game_data, message.user))
+            await message.response.edit_message(embed=embed, view=view)
+
+    def make_number_button(self, game_id: str, number: int) -> Button:
+        async def callback(interaction: discord.Interaction) -> None:
+            game_data = c4game.get_game_data(game_id)
+            players = [self.bot.get_user(player_id) for player_id in game_data.get("player_ids")]
+            turn_player = players[game_data.get("current_turn") % 2]
+
+            if interaction.user != turn_player or c4game.insert_chip(game_data, number) is False:
+                return
+
+            moves = game_data.get("moves")
+            moves.append(number)
+            status = self.game_has_ended(game_data)
+            if status:
+                game_data["in_progress"] = False
+                match status:
+                    case str():
+                        pass
+                    case True:
+                        pass
+
+            c4game.set_game_data(game_id, game_data)
+            await self.game(interaction, game_id)
+
+        button = Button(emoji=utils.numbers[number])
+        button.callback = callback
+        return button
+
+    def make_left_arrow_button(self, game_data: dict, user: discord.User) -> Button:
+        async def callback(interaction: discord.Interaction) -> None:
+            if interaction.user != user or game_data.get("current_turn") == 0:
+                return
+
+            current_turn = game_data.get("current_turn")
+            previous_move = game_data.get("moves")[current_turn - 1]
+            c4game.extract_chip(previous_move, game_data)
+            await self.replay(interaction, game_data)
+
+        button = Button(emoji=utils.arrows[0])
+        button.callback = callback
+        return button
+
+    def make_right_arrow_button(self, game_data: dict, user: discord.User) -> Button:
+        async def callback(interaction: discord.Interaction) -> None:
+            if interaction.user != user or game_data.get("current_turn") == len(game_data.get("moves")):
+                return
+
+            current_turn = game_data.get("current_turn")
+            next_move = game_data.get("moves")[current_turn]
+            c4game.insert_chip(game_data, next_move)
+            await self.replay(interaction, game_data)
+
+        button = Button(emoji=utils.arrows[1])
+        button.callback = callback
+        return button
+
+    def game_has_ended(self, game_data: dict) -> bool | str:
+        if c4game.game_is_won(game_data):
+            players = [self.bot.get_user(player_id).name for player_id in game_data.get("player_ids")]
+            return players[(game_data.get("current_turn") % 2) - 1]
+        return c4game.game_is_drawn(game_data)
+
+    def get_embed_title(self, game_data: dict) -> str:
+        players = [self.bot.get_user(player_id).name for player_id in game_data.get("player_ids")]
+        turn_player = players[game_data.get("current_turn") % 2]
+        return f"Game: {game_data.get('game_id')}; {' vs '.join(players)}\nIt's {turn_player}'s turn"
+
+    @staticmethod
+    def get_game_ui(matrix: list[list[str]]) -> str:
+        return "\n".join(["".join([utils.colors.get(cell_color) for cell_color in row]) for row in matrix])
+
+    @staticmethod
+    async def send_error_game_not_found(context: commands.Context) -> None:
+        embed = discord.Embed(
+            title="Error: Game not found",
+            description="The game you are looking for couldn't be found or does not exist.",
+            color=discord.Color.dark_red()
+        )
+        embed.set_footer(text=utils.footer)
+        await context.send(embed=embed)
+
+    @staticmethod
+    async def send_winner_message(channel: discord.TextChannel, winner: str) -> None:
+        embed = discord.Embed(
+            title="Win",
+            description=f"{winner} has won the game, well played!",
+            color=discord.Color.green()
+        )
+        embed.set_footer(text=utils.footer)
+        await channel.send(embed=embed)
+
+    @staticmethod
+    async def send_draw_message(channel: discord.TextChannel) -> None:
+        embed = discord.Embed(
+            title="Draw",
+            description="The game is drawn.",
+            color=discord.Color.light_gray()
+        )
+        embed.set_footer(text=utils.footer)
+        await channel.send(embed=embed)
+
+
+"""
+@commands.command()
     async def game(self, context, game_id):
         game_data = self.get_game_data(game_id)
 
@@ -143,33 +294,6 @@ class Game(commands.Cog):
             return players[(len(game_data.get("moves")) % 2) - 1]
         return self.game_is_draw(len(game_data.get("moves")))
 
-    def game_is_won(self, game_data):
-        matrix = game_data.get("matrix")
-        moves = game_data.get("moves")
-        color = "red" if len(moves) % 2 == 1 else "yellow"
-        root_x, root_y = moves[-1], 6 - moves.count(moves[-1])
-        directions = [[(1, 0), 1], [(0, 1), 1], [(1, 1), 1], [(1, -1), 1]]
-
-        for i in range(2):
-            factor = 1 - 2*i
-            for direction in directions:
-                offset_x, offset_y = [offset * factor for offset in direction[0]]
-                new_x, new_y = root_x + offset_x, root_y + offset_y
-                while self.is_in_bounds(new_x, new_y) and matrix[new_y][new_x] == color:
-                    direction[1] += 1
-                    if direction[1] == 4:
-                        return True
-                    new_x += offset_x
-                    new_y += offset_y
-
-    @staticmethod
-    def game_is_draw(move_count):
-        return move_count == 42
-
-    @staticmethod
-    def is_in_bounds(x, y):
-        return 0 <= x <= 6 and 0 <= y <= 5
-
     def get_title(self, game_data):
         players = [self.bot.get_user(player_id).name for player_id in game_data.get("player_ids")]
         turn_player = players[len(game_data.get("moves")) % 2]
@@ -178,25 +302,6 @@ class Game(commands.Cog):
     @staticmethod
     def draw_matrix(matrix):
         return "\n".join(["".join([utils.colors.get(cell_color) for cell_color in row]) for row in matrix])
-
-    @staticmethod
-    def get_color(current_turn):
-        return discord.Color.red() if current_turn % 2 == 0 else discord.Color.yellow()
-
-    @staticmethod
-    def get_game_data(game_id):
-        with open("./games.json") as outfile:
-            json_file = json.load(outfile)
-        return json_file.get(game_id)
-
-    @staticmethod
-    def update_game_data(game_id, game_data):
-        with open("./games.json") as outfile:
-            json_file = json.load(outfile)
-
-        with open("./games.json", "w") as outfile:
-            json_file[game_id] = game_data
-            json.dump(json_file, outfile, indent=2)
 
     @staticmethod
     async def error_game_not_found(context):
@@ -226,30 +331,7 @@ class Game(commands.Cog):
             color=discord.Color.light_gray()
         )
         embed.set_footer(text=utils.footer)
-        await channel.send(embed=embed)
-
-
-def generate_game_id(players):
-    with open("./games.json") as outfile:
-        json_file = json.load(outfile)
-
-    game_id = str(random.random())[-4:]
-    while game_id in json_file:
-        game_id = str(random.random())[-4:]
-    player_ids = [player.id for player in random.sample(players, k=2)]
-
-    json_file[game_id] = {
-        "game_id": game_id,
-        "matrix": [["blue" for _ in range(7)] for _ in range(6)],
-        "player_ids": player_ids,
-        "moves": [],
-        "on_going": True
-    }
-
-    with open("./games.json", "w") as file:
-        json.dump(json_file, file, indent=2)
-
-    return game_id
+        await channel.send(embed=embed)"""
 
 
 async def setup(bot):
