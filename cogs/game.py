@@ -79,9 +79,9 @@ class Game(commands.Cog):
                 game_data["in_progress"] = False
                 match status:
                     case str():
-                        pass
+                        await self.send_winner_message(interaction.channel, status)
                     case True:
-                        pass
+                        await self.send_draw_message(interaction.channel)
 
             c4game.set_game_data(game_id, game_data)
             await self.game(interaction, game_id)
@@ -144,7 +144,7 @@ class Game(commands.Cog):
         await context.send(embed=embed)
 
     @staticmethod
-    async def send_winner_message(channel: discord.TextChannel, winner: str) -> None:
+    async def send_winner_message(channel, winner: str) -> None:
         embed = discord.Embed(
             title="Win",
             description=f"{winner} has won the game, well played!",
@@ -154,7 +154,7 @@ class Game(commands.Cog):
         await channel.send(embed=embed)
 
     @staticmethod
-    async def send_draw_message(channel: discord.TextChannel) -> None:
+    async def send_draw_message(channel) -> None:
         embed = discord.Embed(
             title="Draw",
             description="The game is drawn.",

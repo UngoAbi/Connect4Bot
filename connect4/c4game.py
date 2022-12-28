@@ -31,16 +31,22 @@ def game_is_won(game_data: dict) -> bool:  # ToDo fix some bug here
     moves = game_data.get("moves")
     current_turn = game_data.get("current_turn")
     last_color = get_turn_color(current_turn - 1)
-    last_move = moves[current_turn - 1], moves.count(moves[current_turn - 1])
+    last_move = moves[current_turn - 1], 6 - moves.count(moves[current_turn - 1])
     root_x, root_y = last_move
-
+    print("---------------")
+    print(f"{last_move = } {last_color = }")
     for i in range(2):
         factor = 1 - 2*i
+        print(f"{factor = }")
         for direction in directions:
             offset_x, offset_y = [offset * factor for offset in direction[0]]
             new_x, new_y = root_x + offset_x, root_y + offset_y
+            print(f"{offset_x = } {offset_y = }")
+            print(f"{new_x = } {new_y = }")
 
             while is_in_bounds(new_x, new_y) and matrix[new_y][new_x] == last_color:
+                print(f"{new_x = } {new_y = }")
+                print(direction[1])
                 direction[1] += 1
                 if direction[1] == 4:
                     return True
